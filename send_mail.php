@@ -121,8 +121,6 @@ $sheetRow = [
 ];
 
 $spreadsheetId = "1_3xJfI4wh-Zx3liNjSC3oRl157qSp99J6-fKDfuoRZ8";
-$adminsheetId = "1Urkb5boJGwlRLdIE__QMpYyJWYy8DsiSP2eu1To8e-o";
-
 $sheetName     = "Leads";
 $serviceEmail  = "fdr-939@fdrserver.iam.gserviceaccount.com";
 $privateKey    = file_get_contents(__DIR__ . "/key.pem");
@@ -154,34 +152,22 @@ curl_close($tokenCurl);
 
 if (!empty($tokenResponse['access_token'])) {
 
-    $accessToken = $tokenResponse['access_token'];
+    $appendUrl = "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/{$sheetName}!A1:append?valueInputOption=RAW";
 
-    function appendToSheet($spreadsheetId, $sheetName, $sheetRow, $accessToken) {
+    $sheetCurl = curl_init($appendUrl);
+    curl_setopt_array($sheetCurl, [
+        CURLOPT_HTTPHEADER => [
+            "Authorization: Bearer {$tokenResponse['access_token']}",
+            "Content-Type: application/json"
+        ],
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode(['values' => [$sheetRow]]),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 4
+    ]);
 
-        $appendUrl = "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/{$sheetName}!A1:append?valueInputOption=RAW";
-
-        $sheetCurl = curl_init($appendUrl);
-
-        curl_setopt_array($sheetCurl, [
-            CURLOPT_HTTPHEADER => [
-                "Authorization: Bearer {$accessToken}",
-                "Content-Type: application/json"
-            ],
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => json_encode(['values' => [$sheetRow]]),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 4
-        ]);
-
-        curl_exec($sheetCurl);
-        curl_close($sheetCurl);
-    }
-
-    // Send to first sheet
-    appendToSheet($spreadsheetId, $sheetName, $sheetRow, $accessToken);
-
-    // Send to admin sheet
-    appendToSheet($adminsheetId, $sheetName, $sheetRow, $accessToken);
+    curl_exec($sheetCurl);
+    curl_close($sheetCurl);
 }
 
 /* ================= FINAL RESPONSE ================= */
